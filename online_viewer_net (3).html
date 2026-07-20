@@ -1,0 +1,415 @@
+
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portofolio | Hydro Archon's Blessing</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Quicksand:wght@300;400;600&display=swap" rel="stylesheet">
+    
+    <!-- Three.js untuk Efek 3D -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <!-- Vanilla Tilt untuk Efek Kartu 3D -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/vanilla-tilt/1.8.0/vanilla-tilt.min.js"></script>
+
+    <style>
+        body {
+            font-family: 'Quicksand', sans-serif;
+            margin: 0;
+            overflow-x: hidden;
+            background-color: #020617;
+            color: #e0f2fe;
+        }
+        h1, h2, h3, .genshin-font {
+            font-family: 'Cinzel', serif;
+        }
+        
+        /* Background Utama */
+        .bg-universe {
+            background-image: url('1132.jpg');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+        }
+
+        /* Panel Glassmorphism Elegan */
+        .glass-panel {
+            background: linear-gradient(135deg, rgba(10, 25, 47, 0.7) 0%, rgba(4, 12, 24, 0.8) 100%);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(135, 206, 250, 0.2);
+            box-shadow: 0 8px 32px 0 rgba(0, 140, 255, 0.15), inset 0 0 20px rgba(135, 206, 250, 0.05);
+        }
+
+        /* Ornamen Sudut */
+        .corner-tl { position: absolute; top: -1px; left: -1px; width: 25px; height: 25px; border-top: 2px solid #38bdf8; border-left: 2px solid #38bdf8; }
+        .corner-tr { position: absolute; top: -1px; right: -1px; width: 25px; height: 25px; border-top: 2px solid #38bdf8; border-right: 2px solid #38bdf8; }
+        .corner-bl { position: absolute; bottom: -1px; left: -1px; width: 25px; height: 25px; border-bottom: 2px solid #38bdf8; border-left: 2px solid #38bdf8; }
+        .corner-br { position: absolute; bottom: -1px; right: -1px; width: 25px; height: 25px; border-bottom: 2px solid #38bdf8; border-right: 2px solid #38bdf8; }
+
+        /* Efek Glow */
+        .hydro-glow {
+            animation: breathe 4s ease-in-out infinite alternate;
+        }
+        @keyframes breathe {
+            0% { box-shadow: 0 0 15px rgba(56, 189, 248, 0.4); }
+            100% { box-shadow: 0 0 30px rgba(56, 189, 248, 0.8); }
+        }
+
+        .text-glow {
+            text-shadow: 0 0 10px rgba(186, 230, 253, 0.5);
+        }
+
+        /* Canvas Positioning */
+        #rainCanvas, #threeCanvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            pointer-events: none;
+        }
+        #rainCanvas { z-index: -1; }
+        #threeCanvas { z-index: -2; }
+        .bg-overlay { z-index: -3; }
+
+        /* Badge/Tags */
+        .tag-badge {
+            background: rgba(56, 189, 248, 0.1);
+            border: 1px solid rgba(56, 189, 248, 0.3);
+            transition: all 0.3s ease;
+        }
+        .tag-badge:hover {
+            background: rgba(56, 189, 248, 0.2);
+            transform: translateY(-2px);
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(56, 189, 248, 0.5); border-radius: 10px; }
+    </style>
+</head>
+<body class="relative min-h-screen flex items-center justify-center py-12 px-4 sm:px-8 selection:bg-blue-500/30">
+
+    <!-- Latar Belakang Gambar Asli -->
+    <div class="fixed inset-0 bg-universe bg-overlay"></div>
+    <div class="fixed inset-0 bg-black/40 bg-overlay"></div> <!-- Darken overlay -->
+
+    <!-- 3D Canvas (Three.js - Gelembung Air Furina) -->
+    <canvas id="threeCanvas"></canvas>
+    <!-- 2D Canvas (Efek Hujan) -->
+    <canvas id="rainCanvas"></canvas>
+
+    <!-- Kontainer Utama / Grid -->
+    <main class="relative z-10 w-full max-w-5xl grid grid-cols-1 md:grid-cols-12 gap-6 lg:gap-8 items-stretch">
+        
+        <!-- KOLOM KIRI: Profil & Visual (Kartu dengan 3D Tilt) -->
+        <div class="md:col-span-5 flex flex-col gap-6" data-tilt data-tilt-max="5" data-tilt-speed="400" data-tilt-glare data-tilt-max-glare="0.2">
+            <div class="glass-panel relative rounded-xl p-8 flex flex-col items-center text-center h-full">
+                <!-- Ornamen -->
+                <div class="corner-tl rounded-tl-xl"></div>
+                <div class="corner-tr rounded-tr-xl"></div>
+                <div class="corner-bl rounded-bl-xl"></div>
+                <div class="corner-br rounded-br-xl"></div>
+
+                <!-- Avatar -->
+                <div class="relative w-40 h-40 mb-6 group cursor-pointer" style="transform: translateZ(30px);">
+                    <!-- Cincin elemen melingkar -->
+                    <div class="absolute inset-0 rounded-full border border-blue-400/50 border-dashed animate-[spin_12s_linear_infinite] group-hover:border-blue-300 transition-colors duration-500"></div>
+                    <div class="absolute -inset-2 rounded-full border border-indigo-400/30 animate-[spin_18s_linear_infinite_reverse]"></div>
+                    
+                    <img src="https://iili.io/CwCtJ9e.md.jpg" alt="Foto Profil" class="w-full h-full rounded-full object-cover border-2 border-blue-200/50 hydro-glow relative z-10">
+                    
+                    <!-- Dekorasi Elemen Hydro -->
+                    <div class="absolute -bottom-2 -right-2 bg-blue-900/80 border border-blue-400 rounded-full p-2 z-20 shadow-[0_0_10px_rgba(56,189,248,0.8)]">
+                        <i class="fas fa-droplet text-blue-300 text-sm"></i>
+                    </div>
+                </div>
+
+                <h1 class="text-3xl sm:text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-br from-white via-blue-100 to-blue-400 mb-1 text-glow" style="transform: translateZ(20px);">
+                    Pengembara
+                </h1>
+                <p class="text-blue-300 text-xs tracking-[0.3em] uppercase mb-6 genshin-font font-semibold" style="transform: translateZ(15px);">
+                    <i class="fas fa-star text-yellow-200/70 mr-1 text-[10px]"></i> Hydro Vision
+                </p>
+
+                <!-- Furina Quote / Vibe -->
+                <div class="mt-auto pt-6 border-t border-blue-500/20 w-full" style="transform: translateZ(10px);">
+                    <p class="italic text-blue-200/60 text-sm font-serif">
+                        "Biarkan dunia menjadi panggungku, dan rintik hujan menjadi melodi pengiringnya."
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- KOLOM KANAN: Tentang & Kontak -->
+        <div class="md:col-span-7 flex flex-col gap-6">
+            
+            <!-- Kartu Tentang (Lore) -->
+            <div class="glass-panel relative rounded-xl p-8" data-tilt data-tilt-max="3" data-tilt-speed="400">
+                <div class="corner-tl rounded-tl-xl"></div>
+                <div class="corner-br rounded-br-xl"></div>
+                
+                <h2 class="text-2xl text-blue-100 mb-4 flex items-center gap-3 genshin-font border-b border-blue-500/20 pb-3">
+                    <i class="fas fa-book-open text-blue-400/70"></i> Catatan Perjalanan
+                </h2>
+                
+                <p class="text-blue-100/80 leading-relaxed text-[15px] mb-5 text-justify">
+                    Aku menemukan harmoni sejati di antara rimbunnya <span class="text-emerald-300 font-semibold drop-shadow-md">hutan</span> dan tenangnya kedalaman <span class="text-cyan-300 font-semibold drop-shadow-md">lautan</span>. Alam selalu memberikan ruang untuk bernapas dan merenung. 
+                </p>
+                <p class="text-blue-100/80 leading-relaxed text-[15px] mb-6 text-justify">
+                    Selain itu, hatiku sangat terpaut pada pesona budaya <span class="text-red-300 font-semibold drop-shadow-md">Jepang</span>. Salah satu impian terbesarku adalah berjalan-jalan menikmati keindahan dan suasana damai kota <span class="text-indigo-300 font-semibold drop-shadow-md">Nagoya</span>, sambil menyesap secangkir <span class="text-green-400 font-semibold drop-shadow-md">matcha</span> hangat di tengah rintik hujan.
+                </p>
+
+                <!-- Tags Minat -->
+                <div class="flex flex-wrap gap-2 text-xs font-medium text-blue-200">
+                    <span class="tag-badge px-3 py-1.5 rounded-full"><i class="fas fa-leaf mr-1 text-emerald-400"></i> Nature</span>
+                    <span class="tag-badge px-3 py-1.5 rounded-full"><i class="fas fa-water mr-1 text-cyan-400"></i> Ocean</span>
+                    <span class="tag-badge px-3 py-1.5 rounded-full"><i class="fas fa-mug-hot mr-1 text-green-400"></i> Matcha</span>
+                    <span class="tag-badge px-3 py-1.5 rounded-full"><i class="fas fa-torii-gate mr-1 text-red-400"></i> Japan / Nagoya</span>
+                    <span class="tag-badge px-3 py-1.5 rounded-full"><i class="fas fa-umbrella mr-1 text-blue-400"></i> Furina Mains</span>
+                </div>
+            </div>
+
+            <!-- Kartu Kontak (Resonance) -->
+            <div class="glass-panel relative rounded-xl p-8 flex-grow flex flex-col justify-center">
+                <div class="corner-tr rounded-tr-xl"></div>
+                <div class="corner-bl rounded-bl-xl"></div>
+
+                <h2 class="text-xl text-blue-100 mb-6 genshin-font">
+                    <i class="fas fa-link text-blue-400/70 mr-2"></i> Konstelasi Resonansi
+                </h2>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <!-- Discord -->
+                    <button onclick="copyDiscord()" class="group relative overflow-hidden bg-[#5865F2]/10 hover:bg-[#5865F2]/20 border border-[#5865F2]/30 p-4 rounded-lg flex items-center gap-4 transition-all duration-300 text-left w-full focus:outline-none">
+                        <div class="absolute inset-0 w-0 bg-gradient-to-r from-[#5865F2]/20 to-transparent transition-all duration-500 ease-out group-hover:w-full"></div>
+                        <i class="fab fa-discord text-2xl text-[#5865F2] group-hover:scale-110 transition-transform relative z-10"></i>
+                        <div class="relative z-10">
+                            <p class="text-[11px] text-blue-300/70 uppercase tracking-wider">Discord</p>
+                            <p id="discord-id" class="text-sm font-semibold text-white">dearest_ezra</p>
+                        </div>
+                        <i class="fas fa-copy text-white/20 group-hover:text-white/60 ml-auto transition-colors relative z-10"></i>
+                    </button>
+
+                    <!-- Instagram -->
+                    <!-- Ganti href="#" dengan link Instagram kamu! -->
+                    <a href="https://www.instagram.com/leonv_enti?igsh=bHJtbHZzYTU0ZzY1" target="_blank" class="group relative overflow-hidden bg-[#E1306C]/10 hover:bg-[#E1306C]/20 border border-[#E1306C]/30 p-4 rounded-lg flex items-center gap-4 transition-all duration-300 text-left no-underline">
+                        <div class="absolute inset-0 w-0 bg-gradient-to-r from-[#E1306C]/20 to-transparent transition-all duration-500 ease-out group-hover:w-full"></div>
+                        <i class="fab fa-instagram text-2xl text-[#E1306C] group-hover:scale-110 transition-transform relative z-10"></i>
+                        <div class="relative z-10">
+                            <p class="text-[11px] text-blue-300/70 uppercase tracking-wider">Instagram</p>
+                            <p class="text-sm font-semibold text-white">@Leonv_enti</p>
+                        </div>
+                        <i class="fas fa-external-link-alt text-white/20 group-hover:text-white/60 ml-auto transition-colors relative z-10"></i>
+                    </a>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- Notifikasi Toast -->
+    <div id="toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 opacity-0 transition-opacity duration-300 bg-blue-900/90 border border-blue-400/50 backdrop-blur-md text-blue-50 text-sm px-6 py-3 rounded-full shadow-[0_0_15px_rgba(56,189,248,0.4)] pointer-events-none z-50 flex items-center gap-2">
+        <i class="fas fa-check-circle text-green-400"></i> Discord ID berhasil disalin!
+    </div>
+
+    <script>
+        // --- 1. Fungsi Salin Discord ---
+        function copyDiscord() {
+            const discordText = document.getElementById('discord-id').innerText;
+            navigator.clipboard.writeText(discordText).then(() => {
+                const toast = document.getElementById('toast');
+                toast.classList.remove('opacity-0');
+                toast.classList.add('opacity-100');
+                setTimeout(() => {
+                    toast.classList.remove('opacity-100');
+                    toast.classList.add('opacity-0');
+                }, 2500);
+            });
+        }
+
+        // --- 2. Efek Hujan 2D (Sama seperti sebelumnya) ---
+        const rainCanvas = document.getElementById('rainCanvas');
+        const rCtx = rainCanvas.getContext('2d');
+        let rWidth, rHeight;
+        let drops = [];
+
+        function initRain() {
+            rWidth = window.innerWidth;
+            rHeight = window.innerHeight;
+            rainCanvas.width = rWidth;
+            rainCanvas.height = rHeight;
+            
+            drops = [];
+            const dropCount = rWidth < 768 ? 100 : 200;
+            for (let i = 0; i < dropCount; i++) {
+                drops.push({
+                    x: Math.random() * rWidth,
+                    y: Math.random() * rHeight,
+                    length: Math.random() * 15 + 10,
+                    speed: Math.random() * 10 + 5,
+                    thickness: Math.random() * 1.5 + 0.5
+                });
+            }
+        }
+
+        function drawRain() {
+            rCtx.clearRect(0, 0, rWidth, rHeight);
+            rCtx.strokeStyle = 'rgba(135, 206, 250, 0.4)'; 
+            rCtx.lineCap = 'round';
+
+            for (let i = 0; i < drops.length; i++) {
+                const drop = drops[i];
+                rCtx.lineWidth = drop.thickness;
+                rCtx.beginPath();
+                rCtx.moveTo(drop.x, drop.y);
+                rCtx.lineTo(drop.x - (drop.speed * 0.15), drop.y + drop.length);
+                rCtx.stroke();
+
+                drop.y += drop.speed;
+                drop.x -= drop.speed * 0.15;
+
+                if (drop.y > rHeight || drop.x < 0) {
+                    drop.y = -drop.length;
+                    drop.x = Math.random() * rWidth + 50;
+                }
+            }
+            requestAnimationFrame(drawRain);
+        }
+
+        // --- 3. Efek 3D Three.js (Gelembung Air / Furina's Salon) ---
+        const initThreeJS = () => {
+            const canvas = document.getElementById('threeCanvas');
+            const scene = new THREE.Scene();
+            const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            const renderer = new THREE.WebGLRenderer({ canvas: canvas, alpha: true, antialias: true });
+            
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+            // Buat grup untuk menampung partikel 3D
+            const bubbleGroup = new THREE.Group();
+            scene.add(bubbleGroup);
+
+            // Material Gelembung Air (Transparan, Biru, Mengkilat)
+            const geometry = new THREE.SphereGeometry(1, 32, 32);
+            const material = new THREE.MeshPhysicalMaterial({  
+                color: 0x87cefa,
+                transmission: 0.9,
+                opacity: 1,
+                metalness: 0,
+                roughness: 0,
+                ior: 1.5,
+                thickness: 0.5,
+                specularIntensity: 1,
+                clearcoat: 1,
+                clearcoatRoughness: 0.1
+            });
+
+            // Tambahkan beberapa gelembung melayang
+            const bubbles = [];
+            const bubbleCount = window.innerWidth < 768 ? 10 : 25;
+
+            for (let i = 0; i < bubbleCount; i++) {
+                const sphere = new THREE.Mesh(geometry, material);
+                
+                // Posisi Acak
+                sphere.position.x = (Math.random() - 0.5) * 40;
+                sphere.position.y = (Math.random() - 0.5) * 40;
+                sphere.position.z = (Math.random() - 0.5) * 20 - 10; // Agak ke belakang
+                
+                // Skala Acak
+                const scale = Math.random() * 0.8 + 0.2;
+                sphere.scale.set(scale, scale, scale);
+
+                // Tambahkan data khusus untuk animasi
+                sphere.userData = {
+                    floatSpeed: Math.random() * 0.02 + 0.005,
+                    floatOffset: Math.random() * Math.PI * 2,
+                    originalY: sphere.position.y
+                };
+
+                bubbleGroup.add(sphere);
+                bubbles.push(sphere);
+            }
+
+            // Pencahayaan
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
+            scene.add(ambientLight);
+            
+            const pointLight = new THREE.PointLight(0x38bdf8, 2, 100);
+            pointLight.position.set(10, 10, 10);
+            scene.add(pointLight);
+
+            camera.position.z = 15;
+
+            // Interaksi Mouse
+            let mouseX = 0;
+            let mouseY = 0;
+            let targetX = 0;
+            let targetY = 0;
+            const windowHalfX = window.innerWidth / 2;
+            const windowHalfY = window.innerHeight / 2;
+
+            document.addEventListener('mousemove', (event) => {
+                mouseX = (event.clientX - windowHalfX) * 0.001;
+                mouseY = (event.clientY - windowHalfY) * 0.001;
+            });
+
+            // Animasi Loop
+            const clock = new THREE.Clock();
+
+            function animate() {
+                requestAnimationFrame(animate);
+                const time = clock.getElapsedTime();
+
+                // Rotasi grup perlahan berdasarkan mouse
+                targetX = mouseX * 2;
+                targetY = mouseY * 2;
+                bubbleGroup.rotation.y += 0.02 * (targetX - bubbleGroup.rotation.y);
+                bubbleGroup.rotation.x += 0.02 * (targetY - bubbleGroup.rotation.x);
+
+                // Animasi Gelembung Naik Turun (Melayang)
+                bubbles.forEach(bubble => {
+                    bubble.position.y = bubble.userData.originalY + Math.sin(time * 2 + bubble.userData.floatOffset) * 1.5;
+                    bubble.rotation.x += bubble.userData.floatSpeed;
+                    bubble.rotation.y += bubble.userData.floatSpeed;
+                });
+
+                renderer.render(scene, camera);
+            }
+
+            animate();
+
+            // Resize Handler 3D
+            window.addEventListener('resize', () => {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+            });
+        };
+
+        // --- Inisialisasi Semuanya ---
+        window.onload = function() {
+            initRain();
+            drawRain();
+            initThreeJS();
+        };
+
+        window.addEventListener('resize', () => {
+            initRain();
+        });
+    </script>
+</body>
+</html>
+
+
+```
